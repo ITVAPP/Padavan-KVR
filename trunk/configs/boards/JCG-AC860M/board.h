@@ -92,7 +92,7 @@ JCG-AC860M
 #define BOARD_HAS_EPHY_W1000	1                       // 设置为 1 表示支持千兆以太网（W1000）
 
 /* USB3.0 端口数量 */
-#define BOARD_NUM_UPHY_USB3	1                       // 设置 USB3.0 端口数量为 1
+#define BOARD_NUM_UPHY_USB3	0                       // 设置 USB3.0 端口数量为 1
 
 /* USB 端口交换标志（0=不交换，1=交换） */
 #define BOARD_USB_PORT_SWAP	0                       // 设置为 0 表示不交换 USB 端口
