@@ -10,6 +10,7 @@ jobs:
 
     steps:
     - name: Initialization environment
+      # 初始化构建环境，安装构建固件所需的依赖包
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
@@ -17,7 +18,9 @@ jobs:
         sudo apt-get -y install unzip libtool-bin curl cmake gperf gawk flex bison nano xxd fakeroot \
         cpio git python-docutils gettext automake autopoint texinfo build-essential help2man \
         pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget
+
     - name: Clone source code
+      # 克隆Padavan固件源码，并下载交叉编译工具链
       env:
         KERNEL: 3.4
       run: |
@@ -25,77 +28,127 @@ jobs:
         cd /opt/rt-n56u/toolchain-mipsel
         sh dl_toolchain.sh
         mkdir -p /opt/images/
+        
     - name: Build Firmware
+      # 设置编译固件的相关环境变量并开始编译
       env:
-        TNAME: JCG-AC860M-5.0  # 修改为你需要编译的型号
+        TNAME: JCG-AC860M-5.0  # 修改为需要编译的设备型号
         KERNEL: 3.4
       run: |
         cd /opt/rt-n56u/trunk
+        # 检查设备配置文件是否存在
         if [ ! -f configs/templates/$TNAME.config ] ; then
         echo "configs/templates/$TNAME.config not found "
         exit 1
         fi
+        # 复制设备配置文件为当前构建配置
         cp -f configs/templates/$TNAME.config .config
+
         ################################################################################################
-        #因不同型号配置功能不一样，所以先把配置项删除，如果你自己要添加其他的，也要写上删除这一条，切记！！！
+        # 删除无关功能配置，确保根据需求重新定义所需功能
         ################################################################################################
-        
         sed -i 's/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=y/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=n/g' .config
-        sed -i 's/CONFIG_FIRMWARE_INCLUDE_MENTOHUST=y/CONFIG_FIRMWARE_INCLUDE_MENTOHUST=n/g' .config
-        sed -i 's/CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=y/CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=n/g' .config
-        sed -i 's/CONFIG_FIRMWARE_INCLUDE_SRELAY=y/CONFIG_FIRMWARE_INCLUDE_SRELAY=n/g' .config
-        sed -i 's/CONFIG_FIRMWARE_INCLUDE_NJIT_CLIENT=y/CONFIG_FIRMWARE_INCLUDE_NJIT_CLIENT=n/g' .config
-        sed -i 's/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=n/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=y/g' .config
+        # 将DNS转发器功能禁用（DNSForwarder用于在局域网内转发DNS请求）
         
+        sed -i 's/CONFIG_FIRMWARE_INCLUDE_MENTOHUST=y/CONFIG_FIRMWARE_INCLUDE_MENTOHUST=n/g' .config
+        # 禁用Mentohust（主要用于一些校园网的认证客户端）
+        
+        sed -i 's/CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=y/CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=n/g' .config
+        # 禁用SCUTClient，另一个校园网认证客户端
+        
+        sed -i 's/CONFIG_FIRMWARE_INCLUDE_SRELAY=y/CONFIG_FIRMWARE_INCLUDE_SRELAY=n/g' .config
+        # 禁用SRelay，简单的SOCKS4/5代理服务
+        
+        sed -i 's/CONFIG_FIRMWARE_INCLUDE_NJIT_CLIENT=y/CONFIG_FIRMWARE_INCLUDE_NJIT_CLIENT=n/g' .config
+        # 禁用NJIT客户端，适用于某些学校的认证网络
+        
+        sed -i 's/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=n/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=y/g' .config
+        # 启用openssl可执行文件，允许生成和处理SSL证书
+
+        # 删除其他无关的配置项，确保后续可以重新添加需要的功能
         sed -i '/CONFIG_FIRMWARE_INCLUDE_TRANSMISSION/d' .config 
+        # 删除Transmission（BT下载工具）的配置项
+        
         sed -i '/CONFIG_FIRMWARE_INCLUDE_TRANSMISSION_WEB_CONTROL/d' .config
+        # 删除Transmission的Web控制界面配置项
+        
         sed -i '/CONFIG_FIRMWARE_INCLUDE_ARIA/d' .config
+        # 删除Aria2（下载管理器）的配置项
+        
         sed -i '/CONFIG_FIRMWARE_INCLUDE_ARIA_WEB_CONTROL/d' .config
+        # 删除Aria2的Web控制界面配置项
+        
         sed -i '/CONFIG_FIRMWARE_INCLUDE_ZEROTIER/d' .config
+        # 删除Zerotier（内网穿透工具）的配置项
+        
         sed -i '/CONFIG_FIRMWARE_INCLUDE_FRPC/d' .config
+        # 删除FRPC（内网穿透工具）的配置项
+        
         sed -i '/CONFIG_FIRMWARE_INCLUDE_ALIDDNS/d' .config
+        # 删除阿里DDNS（动态DNS）的配置项
+        
         sed -i '/CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS/d' .config
+        # 删除Shadowsocks（代理服务）的配置项
+        
         sed -i '/CONFIG_FIRMWARE_INCLUDE_V2RAY/d' .config
+        # 删除V2Ray（代理服务）的配置项
+        
         sed -i '/CONFIG_FIRMWARE_INCLUDE_XRAY/d' .config
+        # 删除Xray（代理服务）的配置项
+        
         sed -i '/CONFIG_FIRMWARE_INCLUDE_TROJAN/d' .config
+        # 删除Trojan（代理服务）的配置项
+        
         sed -i '/CONFIG_FIRMWARE_INCLUDE_SSOBFS/d' .config
+        # 删除Simple Obfuscation（代理混淆插件）的配置项
+        
         sed -i '/CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER/d' .config
+        # 删除SoftEther VPN服务器的配置项
+        
         sed -i '/CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT/d' .config
+        # 删除SoftEther VPN客户端的配置项
+        
         sed -i '/CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD/d' .config
+        # 删除SoftEther VPN命令行工具的配置项
+        
         sed -i '/CONFIG_FIRMWARE_INCLUDE_NPC/d' .config
+        # 删除NPC（内网穿透工具）的配置项
+        
         sed -i '/CONFIG_FIRMWARE_WEBUI_HIDE_VPN/d' .config
+        # 删除隐藏VPN WebUI界面的配置项
+        
         sed -i '/CONFIG_FIRMWARE_INCLUDE_OPENVPN/d' .config
+        # 删除OpenVPN（虚拟专用网络）的配置项
+        
         ######################################################################
-        #以下选项是定义你需要的功能（y=集成,n=忽略），重新写入到.config文件
+        # 以下选项根据需求重新写入到 .config 文件中，添加需要的功能
         ######################################################################
-        ##内网穿透
-        #echo "CONFIG_FIRMWARE_INCLUDE_NPC=y" >> .config 
-        echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=y" >> .config #zerotier ~1.3M
-        echo "CONFIG_FIRMWARE_INCLUDE_FRPC=y" >> .config  #frpc
-        #echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=y" >> .config #aliddns
-        ##科学上网##
-        #echo "CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=y" >> .config
-        #echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=y" >> .config
-        #echo "CONFIG_FIRMWARE_INCLUDE_XRAY=y" >> .config
-        #echo "CONFIG_FIRMWARE_INCLUDE_TROJAN=y" >> .config
-        ##vpn
-        #echo  "CONFIG_FIRMWARE_INCLUDE_OPENVPN=y" >> .config
-        #echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER=y" >> .config
-        #echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT=y" >> .config
-        #echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD=y" >> .config
+        ## 内网穿透
+        echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=y" >> .config  # 集成Zerotier，支持内网穿透 ~1.3M
+        echo "CONFIG_FIRMWARE_INCLUDE_FRPC=y" >> .config  # 集成FRPC，另一种内网穿透工具
+
+        ## 科学上网功能（可选，按需启用）
+        #echo "CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=y" >> .config  # 启用ShadowSocks功能
+        #echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=y" >> .config  # 启用V2Ray功能
+        #echo "CONFIG_FIRMWARE_INCLUDE_XRAY=y" >> .config  # 启用Xray功能
+        #echo "CONFIG_FIRMWARE_INCLUDE_TROJAN=y" >> .config  # 启用Trojan代理功能
+
+        ## VPN 功能（可选，按需启用）
+        #echo "CONFIG_FIRMWARE_INCLUDE_OPENVPN=y" >> .config  # 启用OpenVPN支持
+        #echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER=y" >> .config  # 启用SoftEther VPN服务器
+        #echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT=y" >> .config  # 启用SoftEther VPN客户端
+        #echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD=y" >> .config  # 启用SoftEther VPN命令行支持
         
         ###############################################################################
-        ##########
-        #自定义添加其它功能请参考源码configs/templates/目录下的config文件。按照上面的格式添加即可
-        #格式如下：
-        #sed -i '/自定义项/d' .config
-        #echo "自定义项=y" >> .config
+        # 自定义添加其他功能参考源码 configs/templates/ 目录下的配置文件
         #########################################################################################
-        sed -i 's/\r//' /opt/rt-n56u/trunk/.config
-        sudo ./clear_tree
-        sudo ./build_firmware_modify $TNAME 0
-        sudo mv -f images/*.trx /opt/images/
-    - name : Upload packages
+        sed -i 's/\r//' /opt/rt-n56u/trunk/.config  # 清理配置文件中的回车符
+        sudo ./clear_tree  # 清理旧的构建环境
+        sudo ./build_firmware_modify $TNAME 0  # 开始编译固件
+        sudo mv -f images/*.trx /opt/images/  # 移动编译完成的固件到输出目录
+
+    - name: Upload packages
+      # 上传编译好的固件
       uses: actions/upload-artifact@master
       if: always()
       with:
