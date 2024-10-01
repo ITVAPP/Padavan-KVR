@@ -1,4 +1,4 @@
-name: Build-Padavan-JCG-AC860M-5.0
+name: Build-Padavan-JCG-AC860M
 
 on: 
   workflow_dispatch:
@@ -32,7 +32,7 @@ jobs:
     - name: Build Firmware
       # 设置编译固件的相关环境变量并开始编译
       env:
-        TNAME: JCG-AC860M-5.0  # 修改为需要编译的设备型号
+        TNAME: JCG-AC860M  # 修改为需要编译的设备型号
         KERNEL: 3.4
       run: |
         cd /opt/rt-n56u/trunk
@@ -119,6 +119,9 @@ jobs:
         
         sed -i '/CONFIG_FIRMWARE_INCLUDE_OPENVPN/d' .config
         # 删除OpenVPN（虚拟专用网络）的配置项
+
+        sed -i '/CONFIG_FIRMWARE_INCLUDE_ALIDDNS/d' .config #删除配置项阿里DDNS
+        sed -i '/CONFIG_FIRMWARE_INCLUDE_CLOUDFLARE/d' .config #删除配置项CLOUDFLARE
         
         ######################################################################
         # 以下选项根据需求重新写入到 .config 文件中，添加需要的功能
@@ -127,8 +130,10 @@ jobs:
         echo "CONFIG_FIRMWARE_INCLUDE_FRPC=y" >> .config  # 集成FRPC，内网穿透工具
 
         ## 科学上网功能（可选，按需启用）
-        #echo "CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=y" >> .config  # 启用ShadowSocks功能
-        #echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=y" >> .config  # 启用V2Ray功能
+        echo "CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=y" >> .config  # 启用ShadowSocks功能
+        echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=y" >> .config  # 启用V2Ray功能
+        echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=y" >> .config #阿里DDNS
+        echo "CONFIG_FIRMWARE_INCLUDE_CLOUDFLARE=y" >> .config # CLOUDFLARE
         
         ###############################################################################
         # 自定义添加其他功能参考源码 configs/templates/ 目录下的配置文件
