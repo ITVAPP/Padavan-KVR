@@ -124,20 +124,13 @@ jobs:
         # 以下选项根据需求重新写入到 .config 文件中，添加需要的功能
         ######################################################################
         ## 内网穿透
-        echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=y" >> .config  # 集成Zerotier，支持内网穿透 ~1.3M
-        echo "CONFIG_FIRMWARE_INCLUDE_FRPC=y" >> .config  # 集成FRPC，另一种内网穿透工具
+        echo "CONFIG_FIRMWARE_INCLUDE_FRPC=y" >> .config  # 集成FRPC，内网穿透工具
 
         ## 科学上网功能（可选，按需启用）
         #echo "CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=y" >> .config  # 启用ShadowSocks功能
         #echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=y" >> .config  # 启用V2Ray功能
         #echo "CONFIG_FIRMWARE_INCLUDE_XRAY=y" >> .config  # 启用Xray功能
         #echo "CONFIG_FIRMWARE_INCLUDE_TROJAN=y" >> .config  # 启用Trojan代理功能
-
-        ## VPN 功能（可选，按需启用）
-        #echo "CONFIG_FIRMWARE_INCLUDE_OPENVPN=y" >> .config  # 启用OpenVPN支持
-        #echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER=y" >> .config  # 启用SoftEther VPN服务器
-        #echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT=y" >> .config  # 启用SoftEther VPN客户端
-        #echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD=y" >> .config  # 启用SoftEther VPN命令行支持
         
         ###############################################################################
         # 自定义添加其他功能参考源码 configs/templates/ 目录下的配置文件
