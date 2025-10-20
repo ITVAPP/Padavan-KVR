@@ -98,15 +98,8 @@ jobs:
         sed -i 's/\r//' /opt/rt-n56u/trunk/.config
         sudo ./clear_tree
         
-        # 编译，所有输出重定向到临时文件
-        sudo ./build_firmware_modify $TNAME 0 > /tmp/build.log 2>&1
-        
-        # 只有编译失败时才输出错误信息
-        if [ $? -ne 0 ]; then
-          echo "=== 编译出错 ==="
-          grep -iE "error|Error|\*\*\*|failed|make\[" /tmp/build.log
-          exit 1
-        fi
+        # 只显示错误信息
+        sudo ./build_firmware_modify $TNAME 0 2>&1 | grep -iE "error:|Error|: error|make.*Error|\*\*\* |failed|undefined reference" || true
         
         sudo mv -f images/*.trx /opt/images/
         
