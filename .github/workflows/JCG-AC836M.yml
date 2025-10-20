@@ -1,9 +1,7 @@
-#修改TNAME: K2P 中的K2P为你需要编译的型号，注意名称要与configs/templates/目录下的名字相同
-name: Build-Padavan-CR660x
+name: JCG-AC836M
 
 on: 
   workflow_dispatch:
-
 
 jobs:
   build:
@@ -20,6 +18,7 @@ jobs:
         cpio git python3-docutils gettext automake autopoint texinfo build-essential help2man \
         pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev libltdl-dev wget \
         autoconf libtool m4
+        
     - name: Clone source code
       env:
         KERNEL: 3.4
@@ -28,6 +27,26 @@ jobs:
         cd /opt/rt-n56u/toolchain-mipsel
         sh dl_toolchain.sh
         mkdir -p /opt/images/
+        
+    - name: Fix libtirpc configuration
+      run: |
+        cd /opt/rt-n56u/trunk/libs/libtirpc/libtirpc-1.3.3
+        
+        # 清理之前的配置
+        make clean 2>/dev/null || true
+        
+        # 重新生成配置文件
+        autoreconf -fiv
+        
+        # 修复 Makefile.am 中的变量问题
+        if [ -f src/Makefile.am ]; then
+          sed -i 's/@PTHREAD_LIBS@/$(PTHREAD_LIBS)/g' src/Makefile.am
+          sed -i 's/@PTHREAD_CFLAGS@/$(PTHREAD_CFLAGS)/g' src/Makefile.am
+        fi
+        
+        # 再次重新生成
+        autoreconf -fiv
+        
     - name: Build Firmware
       env:
         TNAME: JCG-AC836M
@@ -35,22 +54,13 @@ jobs:
       run: |
         cd /opt/rt-n56u/trunk
         
-        # 修复 libtirpc 配置问题
-        if [ -d libs/libtirpc/libtirpc-1.3.3 ]; then
-          cd libs/libtirpc/libtirpc-1.3.3
-          autoreconf -fi || true
-          cd /opt/rt-n56u/trunk
-        fi
-        
         if [ ! -f configs/templates/$TNAME.config ] ; then
-        echo "configs/templates/$TNAME.config not found "
-        exit 1
+          echo "configs/templates/$TNAME.config not found "
+          exit 1
         fi
         cp -f configs/templates/$TNAME.config .config
-        ################################################################################################
-        #因不同型号配置功能不一样，所以先把配置项删除，如果你自己要添加其他的，也要写上删除这一条，切记！！！
-        ################################################################################################
         
+        # 删除原有配置项
         sed -i 's/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=y/CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=n/g' .config
         sed -i 's/CONFIG_FIRMWARE_INCLUDE_MENTOHUST=y/CONFIG_FIRMWARE_INCLUDE_MENTOHUST=n/g' .config
         sed -i 's/CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=y/CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=n/g' .config
@@ -76,36 +86,30 @@ jobs:
         sed -i '/CONFIG_FIRMWARE_INCLUDE_NPC/d' .config
         sed -i '/CONFIG_FIRMWARE_WEBUI_HIDE_VPN/d' .config
         sed -i '/CONFIG_FIRMWARE_INCLUDE_OPENVPN/d' .config
-        ######################################################################
-        #以下选项是定义你需要的功能（y=集成,n=忽略），重新写入到.config文件
-        ######################################################################
-        ##内网穿透
-        #echo "CONFIG_FIRMWARE_INCLUDE_NPC=y" >> .config
-        echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=y" >> .config #zerotier ~1.3M
-        echo "CONFIG_FIRMWARE_INCLUDE_FRPC=y" >> .config  #frpc
-        echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=y" >> .config #aliddns
-        ##科学上网##
+        
+        # 添加需要的功能
+        echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=y" >> .config
+        echo "CONFIG_FIRMWARE_INCLUDE_FRPC=y" >> .config
+        echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=y" >> .config
         echo "CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=y" >> .config
-        #echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=y" >> .config
         echo "CONFIG_FIRMWARE_INCLUDE_XRAY=y" >> .config
         echo "CONFIG_FIRMWARE_INCLUDE_TROJAN=y" >> .config
-        ##vpn
-        #echo  "CONFIG_FIRMWARE_INCLUDE_OPENVPN=n" >> .config
-        #echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER=y" >> .config
-        #echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT=y" >> .config
-        #echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD=y" >> .config
         
-        ###############################################################################
-        ##########
-        #自定义添加其它功能请参考源码configs/templates/目录下的config文件。按照上面的格式添加即可
-        #格式如下：
-        #sed -i '/自定义项/d' .config
-        #echo "自定义项=y" >> .config
-        #########################################################################################
         sed -i 's/\r//' /opt/rt-n56u/trunk/.config
         sudo ./clear_tree
-        sudo ./build_firmware_modify $TNAME 0
+        
+        # 只输出错误信息
+        sudo ./build_firmware_modify $TNAME 0 2>&1 | tee build.log | grep -iE "error|failed|错误" || true
+        
+        # 检查编译是否成功
+        if [ ! -f images/*.trx ]; then
+          echo "=== 编译失败，完整日志如下 ==="
+          cat build.log
+          exit 1
+        fi
+        
         sudo mv -f images/*.trx /opt/images/
+        
     - name: Upload packages
       uses: actions/upload-artifact@v4
       if: always()
