@@ -89,6 +89,9 @@ jobs:
         sed -i '/CONFIG_FIRMWARE_INCLUDE_MSD_LITE/d' .config
         sed -i '/CONFIG_FIRMWARE_INCLUDE_EXFAT/d' .config
         sed -i '/CONFIG_FIRMWARE_INCLUDE_NTFS_3G/d' .config
+        sed -i '/CONFIG_FIRMWARE_ENABLE_EXT2/d' .config
+        sed -i '/CONFIG_FIRMWARE_ENABLE_EXT3/d' .config
+        sed -i '/CONFIG_FIRMWARE_ENABLE_EXT4/d' .config
         
         # 添加需要的功能
         echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=y" >> .config
@@ -100,12 +103,15 @@ jobs:
         echo "CONFIG_FIRMWARE_INCLUDE_MSD_LITE=n" >> .config
         echo "CONFIG_FIRMWARE_INCLUDE_EXFAT=n" >> .config
         echo "CONFIG_FIRMWARE_INCLUDE_NTFS_3G=n" >> .config
+        echo "CONFIG_FIRMWARE_ENABLE_EXT2=n" >> .config
+        echo "CONFIG_FIRMWARE_ENABLE_EXT3=n" >> .config
+        echo "CONFIG_FIRMWARE_ENABLE_EXT4=n" >> .config
         
         sed -i 's/\r//' /opt/rt-n56u/trunk/.config
         sudo ./clear_tree
         
-        # 只显示错误信息
-        sudo ./build_firmware_modify $TNAME 0 2>&1 | grep -iE "error:|Error|: error|make.*Error|\*\*\* |failed|undefined reference" || true
+        # 只显示错误信息，禁用并行编译
+        sudo ./build_firmware_modify $TNAME 1 2>&1 | grep -iE "error:|Error|: error|make.*Error|\*\*\* |failed|undefined reference" || true
         
         sudo mv -f images/*.trx /opt/images/
         
