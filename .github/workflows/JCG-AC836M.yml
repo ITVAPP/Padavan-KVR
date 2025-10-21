@@ -86,6 +86,7 @@ jobs:
         sed -i '/CONFIG_FIRMWARE_INCLUDE_NPC/d' .config
         sed -i '/CONFIG_FIRMWARE_WEBUI_HIDE_VPN/d' .config
         sed -i '/CONFIG_FIRMWARE_INCLUDE_OPENVPN/d' .config
+        sed -i '/CONFIG_FIRMWARE_INCLUDE_MSD_LITE/d' .config
         
         # 添加需要的功能
         echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=y" >> .config
@@ -94,6 +95,7 @@ jobs:
         echo "CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=y" >> .config
         echo "CONFIG_FIRMWARE_INCLUDE_XRAY=y" >> .config
         echo "CONFIG_FIRMWARE_INCLUDE_TROJAN=y" >> .config
+        echo "CONFIG_FIRMWARE_INCLUDE_MSD_LITE=n" >> .config
         
         sed -i 's/\r//' /opt/rt-n56u/trunk/.config
         sudo ./clear_tree
